@@ -19,4 +19,4 @@ class FlipkartItem(scrapy.Item):
     #title= scrapy.Field()
     link = scrapy.Field()
     i_link=scrapy.Field()
-    #desc = scrapy.Field()
+    desc = scrapy.Field()
