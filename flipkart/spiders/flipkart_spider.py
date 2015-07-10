@@ -1,7 +1,7 @@
 from scrapy.spiders import Spider
 from scrapy.selector import Selector
 import scrapy
-import clean
+#import clean
 from flipkart.items import FlipkartItem
 class FlipkartSpider(Spider):
     name = "flipkart"
@@ -34,5 +34,5 @@ class FlipkartSpider(Spider):
             yield request
             #item['i_link']=''.join(site.xpath('./div[1]/a[1]/img/@data-src').extract())
             items.append(item)
-            clean.clean.data()
+#clean.clean_data()
     
