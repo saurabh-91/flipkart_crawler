@@ -24,4 +24,5 @@ class FlipkartItem(scrapy.Item):
     multimedia=scrapy.Field()
     camera=scrapy.Field()
     index=scrapy.Field()
+    title=scrapy.Field()
     general_feature=scrapy.Field() #includes brands, sim size, sim type, touchscreen, handset color, form, cell feature, model name, model id, in yhe box, e.t.c
