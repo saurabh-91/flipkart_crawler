@@ -17,8 +17,6 @@ db = MySQLdb.connect(
                         passwd="9595", # your password
                         db="flipkart_master" # name of the data base
                     ) 
-
-
 # you must create a Cursor object. It will let
 #  you execute all the query you need
 cur = db.cursor()
@@ -29,7 +27,7 @@ if (cur==0):
 r = redis.StrictRedis(host='localhost', port=6379, db=0) #redis client
 
 ######################################## insert into redis, mysql,elasticsearch ####################
-def insert(ind_id,title,name,brand,price,link,i_link,general_feature):
+def insert(ind_id,title,name,brand,price,link,i_link,feature):
    
     doc = {                         # make a json like doc for insertion into redis elasticsearch
                 'name': name,
@@ -38,12 +36,14 @@ def insert(ind_id,title,name,brand,price,link,i_link,general_feature):
                 'brand':brand,
                 'title':title,
                 'i_link':i_link,
-                'general_feature':general_feature,
+                'feature':feature,
                 
                 }    
-    r.hset('flip_hash',ind_id,doc) #redis client insert
-    res=es.index(index="flipkart1",doc_type='mobile', id=ind_id, body=doc,ignore=[400,401,409]) # elasticsearch client insertion        
-    cur.execute("INSERT INTO test VALUES(%s, %s, %s,%s,%s,%s,%s)",(ind_id,title,name,brand,price,link,i_link)) # mysql db insert
+    r.hset('flip_hash2',ind_id,doc) #redis client insert
+    res=es.index(index="flipkart3",doc_type='mobile', id=ind_id, body=doc,ignore=[400,401,409]) # elasticsearch client insertion
+    #  for test
+    feature=str(feature) # convert to string       
+    cur.execute("INSERT INTO test VALUES(%s, %s, %s,%s,%s,%s,%s,%s)",(ind_id,title,name,brand,price,link,i_link,feature)) # mysql db insert
     db.commit() # mysql commit
 
  ####################################################################################################
@@ -68,18 +68,23 @@ class FlipkartSpider(Spider):
         item['brand']=''.join(response.xpath('//div[@class="productSpecs specSection"]/table[1]/tr[2]/td[2]/text()').extract()).strip()
         item['title']=item['title'][:-15]
         ind_id=''.join(response.xpath('//div[@class="pincode-widget-container omniture-field"]/@data-pid').extract())
-        
-        feature_gen = {} # general feature array for general desc
-        gen_desc = response.xpath('//div[@class="productSpecs specSection"]')
-        rows_gen = gen_desc.xpath('.//table[1]/tr')
-        for row in rows_gen:
-            key = ''.join(row.xpath('./td[1]/text()').extract()).strip()
-            value = ''.join(row.xpath('./td[2]/text()').extract()).strip()
-            feature_gen[key] = value
+        feature={}
+        full_desc=response.xpath('//table[@class="specTable"]')
+        for row in full_desc:
+            table_name=''.join(row.xpath('./tr[1]/th/text()').extract())
+            temp_sub_feature={}
+            r1=row.xpath('.//tr')
+            for r in r1:
 
-        item['general_feature'] =feature_gen
+                key=(''.join(r.xpath('./td[1]/text()').extract())).strip()
+                value=(''.join(r.xpath('./td[2]/text()').extract())).strip()
+                temp_sub_feature[key]=value
+            feature[table_name]=temp_sub_feature
+        item['feature']=feature
+
+
 #################################################### call insert function #########################################################
-        insert(ind_id,item['title'],item['name'],item['brand'],item['price'],item['link'],item['i_link'],item['general_feature'])
+        insert(ind_id,item['title'],item['name'],item['brand'],item['price'],item['link'],item['i_link'],item['feature'])
         return item
 ###############################################################  main parser function  ###################################################################
     def parse(self,response):
@@ -159,6 +164,15 @@ class FlipkartSpider(Spider):
         #item['camera']=re.sub('\s+',' ',cam)
         #item['general_feature']=(','.join(response.xpath('//div[@class="productSpecs specSection"]/table[1]/tr/td/text()').extract())).split()#strip(' \t\n\r'))    
         # Call A API with the DATA
+        '''feature_gen = {} # general feature array for general desc
+        gen_desc = response.xpath('//div[@class="productSpecs specSection"]')
+        rows_gen = gen_desc.xpath('.//table[1]/tr')
+        for row in rows_gen:
+            key = ''.join(row.xpath('./td[1]/text()').extract()).strip()
+            value = ''.join(row.xpath('./td[2]/text()').extract()).strip()
+            feature_gen[key] = value
+
+        item['general_feature'] =feature_gen'''
 
 
 ####################################### end of extra BC ####################################################################
