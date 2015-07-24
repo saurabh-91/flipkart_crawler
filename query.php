@@ -1,17 +1,3 @@
-<!DOCTYPE html>
-<!-- ####################################################### some of html BC #######################################################-->
-<html>
-<head>
-    <title></title>
-</head>
-<body>
-
-
-<!-- #################################################### partial end  of html BC  ################################################-->
-
-
-
-
 <!-- #################################################### start of main php program ##############################################-->
 <?php
 
@@ -201,7 +187,7 @@ include("constants.php");
     <th>image</th>
     <th>view_details</th>
   </tr>
-  <?php for ($i=0;$i<=count($ret_array[0]);$i=$i+1){?>
+  <?php for ($i=0;$i<count($ret_array[0]);$i=$i+1){?>
       <tr> 
         <td><?php echo $ret_array[0][$i][_source][name]?></td>
       

@@ -1,4 +1,4 @@
-<?php  include ("class_query.php")?>
+<?php  include ("class_query.php");?>
 
 <!DOCTYPE html>
 <html>
@@ -6,9 +6,6 @@
 	<title></title>
 </head>
 <body>
-
-
-
 <table>
   <tr>
     <th>name</th>
@@ -34,16 +31,32 @@
 
 
 <!-- #############################################################  display filter in checkbox format ######################################################### -->
-<form form id = "brand-fliter" action ="class_query.php" method="get">
+<form form id = "brand-fliter" action ="test_js.html" method="get">
 
 <?php while (current($ret_array[1]))
     { ?>
-    <input type="checkbox" name="brand_name[]" value="<?php echo key($ret_array[1]); ?>"><?php echo key($ret_array[1])." = ".current($ret_array[1]); ?><br>
+    <input type="checkbox" name="brand_name[]" id="brand_id" value="<?php echo key($ret_array[1]); ?>"><?php echo key($ret_array[1])." = ".current($ret_array[1]); ?><br>
        
         <?php next($ret_array[1]);
     }?>
+
     <input type="hidden"   name="selected[b]" value="<?php echo $s_brand?>">
     <input type="hidden"   name="selected[r]" value="<?php echo $s_range?>"> 
+
+    <button onclick="myFunction()">Try it</button>
+
+<p id="demo"></p>
+<p id ="t"></p>
+<!--
+<script>
+function myFunction() {
+    var x = document.getElementById("brand_id").value;
+    document.getElementById("t").innerHTML = x;
+}
+</script>-->
+
+
+
     <!--<?php foreach($s_brand as $value)
 {
   echo '<input type="hidden" name="selected_brand[]" value="'. $value. '">';
@@ -73,3 +86,33 @@
 
 </body>
 </html>
+
+
+
+<!--<!DOCTYPE html>
+<html>
+<body>
+
+Checkbox: <input type="checkbox" id="myCheck" value="myvalu">
+
+
+<input type="checkbox" name="brand_name" id="check" value="yeh"><br>
+
+    <input type="hidden"   name="selected[r]"  id= "t" value="<?php echo $s_range?>"> 
+
+<p>Click the "Try it" button to display the value of the value attribute of the checkbox.</p>
+
+<button onclick="myFunction()">Try it</button>
+
+<p id="demo"></p>
+<p id ="t"></p>
+
+<script>
+function myFunction() {
+    var x = document.getElementById("check").value;
+    document.getElementById("t").innerHTML = x;
+}
+</script>
+
+</body>
+</html>-->

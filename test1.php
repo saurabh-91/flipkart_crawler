@@ -1,4 +1,4 @@
-<?php  include ("class_query.php")?>
+<?php  include ("class_query.php");?>
 
 <!DOCTYPE html>
 <html>
@@ -6,9 +6,6 @@
 	<title></title>
 </head>
 <body>
-
-
-
 <table>
   <tr>
     <th>name</th>
@@ -32,16 +29,16 @@
 </table>
 
 
-
 <!-- #############################################################  display filter in checkbox format ######################################################### -->
-<form form id = "brand-fliter" action ="class_query.php" method="get">
+<form form id = "brand-fliter" action ="test1.php" method="get">
 
 <?php while (current($ret_array[1]))
     { ?>
-    <input type="checkbox" name="brand_name[]" value="<?php echo key($ret_array[1]); ?>"><?php echo key($ret_array[1])." = ".current($ret_array[1]); ?><br>
+    <input type="checkbox" name="brand_name[]" id="brand_id" value="<?php echo key($ret_array[1]); ?>"><?php echo key($ret_array[1])." = ".current($ret_array[1]); ?><br>
        
         <?php next($ret_array[1]);
     }?>
+
     <input type="hidden"   name="selected[b]" value="<?php echo $s_brand?>">
     <input type="hidden"   name="selected[r]" value="<?php echo $s_range?>"> 
     <!--<?php foreach($s_brand as $value)
