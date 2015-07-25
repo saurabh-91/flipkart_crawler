@@ -1,0 +1,7 @@
+curl -XPOST 'localhost:9200/flipkart_data' -'d
+{
+"_mapping":{
+"mobile":{
+"properties":{
+"brand":{
+"type":"string","index":"not_analyzed"},"os":{"type":"string","index":"not_analyzed"},"ram":{"type":"string","index":"not_analyzed"}}}}}'

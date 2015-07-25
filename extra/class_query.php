@@ -4,23 +4,32 @@
 */
 include("constants.php");
 require 'vendor/autoload.php';
-class Elastic_search //extends AnotherClass
+class SearchElastic //extends AnotherClass
 {
 	
 	public $ini_query="";// initial search query which will be maintained after applying filter
     public $ret_array=array(); // global array for storing  arrays of results]
     public $s_brand=array();
     public $s_range=array();
+    //public $user_query_string;//get the user query string using post or get method
 	//public $user_query;
 	/*public $bname;
 	public $range_array */
-	
-    public function user_query_search($user_query)
+	/*function __construct()
+	{
+		$this->user_query_string=$_POST['search'];
+		
+	}*/
+
+    public function user_query_search($user_query_string)
     {
+
+    		echo $user_query_string;
+		//die();
     	$searchParams = array();
         $searchParams['index'] = INDEX;
         $searchParams['type']  = TYPE;
-        $searchParams['body']['query']['match']['title'] = $user_query;
+        $searchParams['body']['query']['match']['title'] = $user_query_string;
         $searchParams['size']=SIZE;
         return $searchParams;
     }
@@ -31,13 +40,12 @@ class Elastic_search //extends AnotherClass
     	global $s_brand;
     	global $s_range;
 
-    	if (isset($_POST['search']))
+    	if (isset($_POST["search"]))
     	{ 
-
-	        $user_query=$_POST["search"];
+	        $user_query_string=$_POST["search"];
 	        
-	        $ini_query=$user_query;
-	        $searchParams=$this->user_query_search($user_query); 
+	        $ini_query=$user_query_string;
+	        $searchParams=$this->user_query_search($user_query_string); 
 	        //echo $user_query;
 	        //die();
 	        $ret_array=$this->Elastic_search_common($searchParams);
@@ -50,7 +58,7 @@ class Elastic_search //extends AnotherClass
 	        $bname=array();
 	        $range_array=array();
 	        $ini_query=$_GET['initial_query'];
-	        print_r($_get['selected_brand']);
+	        //print_r($_get['selected_brand']);
 	        //$s_brand=$_GET['selecte'];
 	        //var_dump($s_brand);
 	        //die();
@@ -77,9 +85,10 @@ class Elastic_search //extends AnotherClass
 	    	*/
 
 	        //$range_array=$range_array+$s_range;
+	    	$check=$_GET['brand_name'];
+	    	echo $check;
 
-
-	        foreach($_GET['brand_name'] as $temp)
+	        foreach($check as $temp)
 	        {
 	            array_push($bname,$temp);
 	        }
@@ -150,7 +159,8 @@ class Elastic_search //extends AnotherClass
         $searchParams['body']['query']['filtered']['query']['match']['title']=$ini_query;
         $searchParams['body']['size']=SIZE;
 
-        //var_dump(json_encode($searchParams));
+
+        var_dump(json_encode($searchParams));
         //die(3);
         return $searchParams;
     }
@@ -199,14 +209,9 @@ class Elastic_search //extends AnotherClass
         return array($table_array,$brand_list_count,$price_range);
 
     }
-	/*function __construct(argument)
-	{
-		# code...
-	}*/
+	
 }
 
-$es_client=new Elastic_search();
-$es_client->check_operation();
 //$es_client->echo_test();
 //$ret_arra=$es_client->$ret_array;
 //echo $ret_arra;

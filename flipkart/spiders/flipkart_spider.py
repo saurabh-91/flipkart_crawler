@@ -8,6 +8,7 @@ import time
 from flipkart.items import FlipkartItem
 import MySQLdb
 import redis
+import hashlib
 ###################################################################################################
 es = Elasticsearch() # elastcsearch client 
 ############################################## my sql db parameter ################################
@@ -27,7 +28,7 @@ if (cur==0):
 r = redis.StrictRedis(host='localhost', port=6379, db=0) #redis client
 
 ######################################## insert into redis, mysql,elasticsearch ####################
-def insert(ind_id,title,name,brand,price,link,i_link,feature):
+def insert(ind_id,title,name,brand,price,link,i_link,feature,ram,os):
    
     doc = {                         # make a json like doc for insertion into redis elasticsearch
                 'name': name,
@@ -37,13 +38,15 @@ def insert(ind_id,title,name,brand,price,link,i_link,feature):
                 'title':title,
                 'i_link':i_link,
                 'feature':feature,
+                'ram':ram,
+                'os':os,
                 
                 }    
-    r.hset('flip_hash2',ind_id,doc) #redis client insert
-    res=es.index(index="flipkart3",doc_type='mobile', id=ind_id, body=doc,ignore=[400,401,409]) # elasticsearch client insertion
+    r.hset('flip_hash',ind_id,doc) #redis client insert
+    res=es.index(index="flipkart_data",doc_type='mobile', id=ind_id, body=doc,ignore=[400,401,409]) # elasticsearch client insertion
     #  for test
     feature=str(feature) # convert to string       
-    cur.execute("INSERT INTO test VALUES(%s, %s, %s,%s,%s,%s,%s,%s)",(ind_id,title,name,brand,price,link,i_link,feature)) # mysql db insert
+    cur.execute("INSERT INTO masterdetails VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",(ind_id,title,name,brand,price,link,i_link,feature,ram,os)) # mysql db insert
     db.commit() # mysql commit
 
  ####################################################################################################
@@ -61,13 +64,22 @@ class FlipkartSpider(Spider):
     ################################################ callback function ###############################
     def parse_details(self,response):
         item=response.meta['item']
+        mem=''.join(response.xpath('//tr[td/text()="Memory"]/td[2]/text()').extract()).strip()
+        i=mem.find("RAM");#starting index of ram 
+        item['ram']=mem[:i-1]
+        os=''.join(response.xpath('//tr[td/text()="OS"]/td[2]/text()').extract()).strip()
+        i=os.find(" ");
+        if(i<0):
+            item['os']=os
+        else:
+            item['os']=os[:i]
         item['title']=''.join(response.xpath('//title/text()').extract()).strip()
         item['desc']=''.join(response.xpath('//div[@class="rpdSection"]/p[1]/text()').extract())
         item['details']=','.join(response.xpath('//div[@class="specifications-wrap line unit"]/ul[1]/li/text()').extract())
         item['i_link']=''.join(response.xpath('//meta[@name="og_image"]/@content').extract())
-        item['brand']=''.join(response.xpath('//div[@class="productSpecs specSection"]/table[1]/tr[2]/td[2]/text()').extract()).strip()
+        item['brand']=''.join(response.xpath('//tr[td/text()="Brand"]/td[2]/text()').extract()).strip()
         item['title']=item['title'][:-15]
-        ind_id=''.join(response.xpath('//div[@class="pincode-widget-container omniture-field"]/@data-pid').extract())
+        #ind_id=''.join(response.xpath('//div[@class="pincode-widget-container omniture-field"]/@data-pid').extract())
         feature={}
         full_desc=response.xpath('//table[@class="specTable"]')
         for row in full_desc:
@@ -84,7 +96,7 @@ class FlipkartSpider(Spider):
 
 
 #################################################### call insert function #########################################################
-        insert(ind_id,item['title'],item['name'],item['brand'],item['price'],item['link'],item['i_link'],item['feature'])
+        insert(item['ind_id'],item['title'],item['name'],item['brand'],item['price'],item['link'],item['i_link'],item['feature'],item['ram'],item['os'])
         return item
 ###############################################################  main parser function  ###################################################################
     def parse(self,response):
@@ -102,4 +114,6 @@ class FlipkartSpider(Spider):
             initial="https://flipkart.com"
             ul=initial+''.join(site.xpath('./div[1]/a[1]/@href').extract())
             item['link']=ul
+            hash_object = hashlib.md5(ul)
+            item['ind_id']=hash_object.hexdigest()
             yield scrapy.Request(ul,meta={'item':item},callback=self.parse_details)

@@ -1,4 +1,5 @@
 <?php  include ("class_query.php");?>
+<?php  include ("constants.php");?>
 
 <!DOCTYPE html>
 <html>
