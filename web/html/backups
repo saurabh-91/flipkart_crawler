@@ -1,0 +1,27 @@
+curl -XGET 'http://localhost:9200/flipkart_data/mobile/_search?pretty' -d '{
+  "aggregations": {
+    "my_agg": {
+      "terms": {
+        "field":"brand","min_doc_count":0
+      }
+    }
+  },"query":{"filtered":{"filter":{"bool":{"must":[{"terms":{"brand":["T-Max","ZEN","ZTE"]}},{"bool":{"should":[{"range":{"price":{"gte":0,"lt":10000}}}]}}]}},"query":{"match":{"title":"4 gb ram"}}}},"size":2000
+}
+'
+
+
+
+
+final 
+
+
+curl -XGET 'http://localhost:9200/flipkart_data/mobile/_search?pretty' -d '{
+  "aggregations": {
+    "my_agg": {
+      "terms": {
+        "field":"brand","min_doc_count":0,"size":50
+      }
+    }
+  },"query":{"filtered":{"filter":{"bool":{"must":[{"terms":{"brand":["T-Max","ZEN","ZTE"]}},{"bool":{"should":[{"range":{"price":{"gte":0,"lt":10000}}}]}}]}},"query":{"match":{"title":"4 gb ram"}}}},"size":2000
+}
+'
