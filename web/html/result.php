@@ -3,13 +3,13 @@
 include ("class_query.php");
 include ("constants.php");
 $bname=$_POST['brand_name'];
-$test=0;
+$page_no=0;
 if(!isset($_POST['search']))
 {
-$test= $_POST['from'];
+$page_no= $_POST['from'];
 }
 $es_client 		 =  new SearchElastic();
-$ret_array 		 =  $es_client->check_operation();
+$ret_array 		 =  $es_client->check_operation($page_no);
 $list_of_filters =  $es_client->find_list_of_filters($ret_array);
 ?>
 
@@ -63,14 +63,16 @@ Search:<br>
     }?>    
     <input type="hidden"   name="initial_query" value="<?php echo $ini_query?>">
     <input type="hidden"   name="initial_size_of_brand" value="<?php echo $ini_brand_size?>">
-    <input type="hidden"    id="page_id" 	name="from" value="<?php echo $test ?>">
+    <input type="hidden"    id="page_id" 	name="from" value="<?php echo $page_no ?>">
     <input class="range_id" type="checkbox" name="price_range[]" value="8888"  <?php if(isset($_POST['price_range'][0])) echo SHOWCHECKED; ?> >0-10000          (<?php echo $ret_array[2][0];?>)<br>
     <input class="range_id" type="checkbox" name="price_range[]" value="18888" <?php if(isset($_POST['price_range'][1])) echo SHOWCHECKED; ?> >10000-20000      (<?php echo $ret_array[2][1];?>)<br>
     <input class="range_id" type="checkbox" name="price_range[]" value="28888" <?php if(isset($_POST['price_range'][2])) echo SHOWCHECKED; ?> >20000-35000      (<?php echo $ret_array[2][2];?>)<br>
     <input class="range_id" type="checkbox" name="price_range[]" value="38888" <?php if(isset($_POST['price_range'][3])) echo SHOWCHECKED; ?> >35000-50000      (<?php echo $ret_array[2][3];?>)<br>
     <input class="range_id" type="checkbox" name="price_range[]" value="48888" <?php if(isset($_POST['price_range'][4])) echo SHOWCHECKED; ?> >50000 and above  (<?php echo $ret_array[2][4];?>)<br>
     <input class="range_id" type="checkbox" name="price_range[]" value="-5"    <?php if(isset($_POST['price_range'][5])) echo SHOWCHECKED; ?> >price not listed (<?php echo $ret_array[2][5];?>)<br>
-    <input type="submit" value="submit" class="buttons" onclick="from_set()" />
+    <input type="submit" value="submit" class="buttons"  />
+    <input type="submit" value="next" class="buttons" onclick="next_page()" />
+    <?php if($page_no)echo '<input type="submit" value="prev" class="buttons" onclick="prev_page()" />';?>
 
     
 </form>
@@ -81,15 +83,24 @@ Search:<br>
 	{
 		flag=1;
 		var elem   = document.getElementById("page_id");
-			elem.value=1000;
+			elem.value=0;
 		
 	}
-	function from_set () 
+	function next_page() 
 	{
 		if(!flag)
 		{
 			var elem   = document.getElementById("page_id");
-			elem.value = parseInt(elem.value)+2000;
+			elem.value = parseInt(elem.value)+1;
+			
+		}
+	}
+	function prev_page () 
+	{
+		if(!flag)
+		{
+			var elem   = document.getElementById("page_id");
+			elem.value = parseInt(elem.value)-1;
 			
 		}
 	}

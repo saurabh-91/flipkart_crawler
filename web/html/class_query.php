@@ -16,7 +16,7 @@ class SearchElastic
    }
 // ###########################################################################################################################################
 // ######################################### only this function depends on user input ########################################################	 
-    public function check_operation()//depent on user input which opretion to perform
+    public function check_operation($page_no)//depent on user input which opretion to perform
     {
     	global $ini_query;
     	global $ini_brand_size;
@@ -32,7 +32,7 @@ class SearchElastic
 	    	$selected_brand_name  =  $_POST['brand_name'];
 	    	$selected_price_range =  $_POST['price_range'];
 	    	//$selected_os_name	  =  $_POST['os_name'];
-	    	$ret_array            =  $this->filtered_query($selected_brand_name, $ini_query, $selected_price_range, $ini_brand_size);
+	    	$ret_array            =  $this->filtered_query($selected_brand_name, $ini_query, $selected_price_range, $ini_brand_size,$page_no);
 
 	    }
 	    return $ret_array;
@@ -40,14 +40,14 @@ class SearchElastic
 // ###########################################################################################################################################
    
 // ################################################# get results for html ####################################################################
-    public function get_results($retDoc)
+    public function get_results($retDoc, $page_no)
     {
     	global $ini_brand_size;
     	
         $brand_list=array();
         for ($i=0; $i < 10; $i = $i+1)
         {
-            $table_array[$i] = $retDoc[$i];
+            $table_array[$i] = $retDoc[($i+10*$page_no)];
         }
         for ($i = 0; $i < count($retDoc); $i = $i+1)
         {    
@@ -230,7 +230,7 @@ class SearchElastic
 // ###########################################################################################################################################
 
 // ############################################## filtered query (for filtering user search) #################################################
-    public function filtered_query($selected_brand_name, $ini_query, $selected_price_range, $ini_brand_size)
+    public function filtered_query($selected_brand_name, $ini_query, $selected_price_range, $ini_brand_size, $page_no)
     {
         $brand_filter      = $this->brand_filter_builder($selected_brand_name);		// call brand filter builder
         $range_filter      = $this->range_filter_builder($selected_price_range); 	// call range filter builder
@@ -259,7 +259,7 @@ class SearchElastic
         $retDoc = $client->search($searchParams);//echo json_encode($retDoc);
         $aggregation_result=$retDoc['aggregations']['global_agg']['filter_scope']['brand_bucket']['buckets']; // gets aggregation results
         $retDoc = $retDoc[hits][hits];
-        $temp_result=$this->get_results($retDoc);
+        $temp_result=$this->get_results($retDoc,$page_no);
         array_push($temp_result,$aggregation_result);
         return $temp_result;
     }
