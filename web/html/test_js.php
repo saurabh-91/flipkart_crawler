@@ -1,7 +1,6 @@
 
 <?php
 include ("class_query.php");
-include ("constants.php");
 $es_client=new SearchElastic();
 $es_client->check_operation();
 $set_brand_flag=isset($_GET['brand_name']);

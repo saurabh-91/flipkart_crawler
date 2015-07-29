@@ -18,8 +18,8 @@ try {
 
     //echo "Successfully connected to Redis";
     $detail=$redis->hget("flip_hash",$id);
-    //var_dump($detail);
-    echo "               start_bc   ";
+    var_dump($detail);
+   // echo "               start_bc   ";
     $string=substr($detail,28);
 //$string=substr($string,-3);
 
@@ -40,8 +40,8 @@ foreach ($array as $value)
 	//echo $v[0];
 	$new_array[$v[0]]=$v[1];
 }
-echo $new_array["'Model ID'"]."                                                        ";
-var_dump($new_array);
+//echo $new_array["'Model ID'"]."                                                        ";
+//var_dump($new_array);
 }
 catch (Exception $e) {
     echo "Couldn't connected to Redis";

@@ -9,10 +9,26 @@ class SearchElastic
 {
 	
 	public $ini_query = "";// initial search query which will be maintained after applying filter
+	public $ini_brand_size=0; // no of brands listed in user query
+// ######################################### get the elasticsearch index params #############################################################
+	public function get_es_index_params($index, $type, $size)
+   {
+   		$searchParams = array();
+        $searchParams['index'] = $index;
+        $searchParams['type']  = $type;
+        $searchParams['size'] = $size;
+        return $searchParams;
+   }
+
+// ###########################################################################################################################################
+
+
+
 // ######################################### only this function depends on user input ########################################################	 
     public function check_operation()//depent on user input which opretion to perform
     {
     	global $ini_query;
+    	global $ini_brand_size;
     	if (isset($_POST["search"]))
     	{ 	//call search function;
     		$user_query_string =  $_POST["search"];
@@ -20,10 +36,12 @@ class SearchElastic
     	}
 	    else
 	    {	//call filtered search function
+	    	$ini_brand_size		  =  $_POST['initial_size_of_brand'];
 	    	$ini_query            =  $_POST['initial_query'];
 	    	$selected_brand_name  =  $_POST['brand_name'];
 	    	$selected_price_range =  $_POST['price_range'];
-	    	$ret_array            =  $this->filtered_query($selected_brand_name, $ini_query, $selected_price_range);
+	    	$selected_os_name	  =  $_POST['os_name'];
+	    	$ret_array            =  $this->filtered_query($selected_brand_name, $ini_query, $selected_price_range, $ini_brand_size);
 	    }
 	    return $ret_array;
     }
@@ -33,11 +51,10 @@ class SearchElastic
     public function user_query_search($user_query_string)
     {
     	global $ini_query;
+    	global $ini_brand_size;
     	$user_query_string=trim($user_query_string);
     	$ini_query = $user_query_string;
-    	$searchParams = array();
-        $searchParams['index'] = INDEX;
-        $searchParams['type']  = TYPE;
+        $searchParams=$this->get_es_index_params(INDEX, TYPE, SIZE);
         if($user_query_string) // check condition for null search query
         {
         	$searchParams['body']['query']['match']['title'] = $user_query_string;
@@ -46,11 +63,10 @@ class SearchElastic
         {
         	$searchParams['body']['query']['match_all'] = new StdClass();
         }
-        $searchParams['size'] = SIZE;
-        var_dump(json_encode($searchParams));
-        $client = new Elasticsearch\Client(); // create a elastcsearch client
+        $client = new Elasticsearch\Client(); 
         $retDoc = $client->search($searchParams);//echo json_encode($retDoc);
         $retDoc = $retDoc[hits][hits];
+        $brand_list=array();
         for ($i=0; $i < 10; $i = $i+1)
         {
             $table_array[$i] = $retDoc[$i];
@@ -61,6 +77,7 @@ class SearchElastic
             $temp1 = $retDoc[$i][_source][price];
             if(!array_key_exists($temp, $brand_list_count))
             {
+            	array_push($brand_list, $temp);
                 $brand_list_count[$temp] = 0;
             }
             // switch case  for hardcoded price  range count
@@ -88,7 +105,8 @@ class SearchElastic
             // end of switch
             $brand_list_count[$temp]+= 1;
         }
-        return array($table_array, $brand_list_count, $price_range);
+        $ini_brand_size = count($brand_list_count);// set the count of brands in initial user query
+        return array($table_array, $brand_list, $price_range);
 
     }
 // ###########################################################################################################################################
@@ -103,7 +121,6 @@ class SearchElastic
 	        array_push($bname, $temp);
 	    }
         $brand_filter          = array();
-        $must_array            = array();
         
         if ($bname) 
         {
@@ -112,6 +129,27 @@ class SearchElastic
         return $brand_filter;
     }
 // ###########################################################################################################################################
+
+// ########################################## bulid os filter #############################################################################
+    public function os_filter_builder($selected_os_name)
+    {
+    	$oname = array();
+	    
+	    foreach($selected_os_name as $temp)
+	    {
+	        array_push($oname, $temp);
+	    }
+        $os_filter          = array();
+        echo "os";
+        if ($oname) 
+        {
+             $os_filter['terms']['os'] = $oname;
+        }
+        return $os_filter;
+    }
+// ###########################################################################################################################################
+
+
 
 // ###########################################  build range filter ########################################################################### 
     public function range_filter_builder($selected_price_range)
@@ -179,37 +217,70 @@ class SearchElastic
     }
 // ###########################################################################################################################################
 
+// ############################################## aggregation builder ########################################################################
+    public function aggregations_builder($ini_brand_size, $ini_query)
+    {
+    	$aggregation_array =array();
+    	$aggregation_array['global_agg']['global'] = new StdClass();
+    	$aggregation_array['global_agg']['aggs']['filter_scope']['filter']['query']['match']['title'] = $ini_query;
+    	$aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['brand_bucket']['terms']['field'] = "brand";
+    	$aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['brand_bucket']['terms']['min_doc_count'] = 0;
+    	$aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['brand_bucket']['terms']['size'] = $ini_brand_size;
+
+    	/*$aggregation_array['my_agg']['terms']['field']="brand";
+    	$aggregation_array['my_agg']['terms']['min_doc_count']=0;
+    	$aggregation_array['my_agg']['terms']['size']=$ini_brand_size;*/
+    	return $aggregation_array;
+
+
+    }
+
+// ###########################################################################################################################################
+
 // ############################################## filtered query (for filtering user search) #################################################
-    public function filtered_query($selected_brand_name, $ini_query, $selected_price_range)
+    public function filtered_query($selected_brand_name, $ini_query, $selected_price_range, $ini_brand_size, $test)
     {
     	// call brand filter builder
     	// call range filter builder
+    	// call os 	  filter builder
     	// call initial search builder
-        $brand_filter = $this->brand_filter_builder($selected_brand_name);
-        $range_filter = $this->range_filter_builder($selected_price_range);
-        $initial_query=$this->initial_query_builder($ini_query);
+    	// call aggregations   builder
+        $brand_filter      = $this->brand_filter_builder($selected_brand_name);
+        $range_filter      = $this->range_filter_builder($selected_price_range);
+        $os_filter 		   = $this->os_filter_builder($selected_os_name);
+        $initial_query     = $this->initial_query_builder($ini_query);
+        
+        $aggregation_array = $this->aggregations_builder($ini_brand_size, $ini_query);
+        
+        //die();
         // combine all the filtered in must array
-        $must_array=array();
+        $must_array = array();
 
         if($brand_filter)
         {
         	array_push($must_array, $brand_filter);
         }
+        if($os_filter)
+        {
+        	array_push($must_array, $os_filter);
+        }
         
         array_push($must_array, $range_filter);
 
-
-
-    	$searchParams          = array();
-        $searchParams['index'] = INDEX;
-        $searchParams['type']  = TYPE;
+        // combine aggregation ,filters,initial user query 
+    	$searchParams=$this->get_es_index_params(INDEX, TYPE, SIZE);
         $searchParams['body']['query']['filtered']['filter']['bool']['must']  = $must_array;
-        $searchParams['body']['query']['filtered']['query']					  = $initial_query;  //initial user query builder
-        $searchParams['body']['size']										  = SIZE;
+        $searchParams['body']['query']['filtered']['query']					  = $initial_query;  	//initial user query builder
+        $searchParams['body']['aggs'] 								  		  = $aggregation_array; // aggregation on brand
         //making of searchable json done
+        //echo "yeh";
         var_dump(json_encode($searchParams));
-        $client = new Elasticsearch\Client(); // create a elastcsearch client
+        //die();
+        $client = new Elasticsearch\Client(); 
         $retDoc = $client->search($searchParams);//echo json_encode($retDoc);
+        $aggregation_result=$retDoc['aggregations']['global_agg']['filter_scope']['brand_bucket']['buckets']; // gets aggregation results
+        
+        $brand_list=array();
         $retDoc = $retDoc[hits][hits];
         for ($i = 0; $i < 10; $i = $i+1)
         {
@@ -221,6 +292,7 @@ class SearchElastic
             $temp1 = $retDoc[$i][_source][price];
             if(!array_key_exists($temp, $brand_list_count))
             {
+            	array_push($brand_list, $temp);
                 $brand_list_count[$temp]=0;
             }
             // switch case  for hardcoded price  range count
@@ -248,10 +320,40 @@ class SearchElastic
             // end of switch
             $brand_list_count[$temp]+= 1;
         }
-        return array($table_array, $brand_list_count, $price_range);
+        return array($table_array, $brand_list, $price_range, $aggregation_result);
 
     }
 // ###########################################################################################################################################
 
+
+// #################################### find list of filter because it depends on condition that aggregation is applied or not ###############
+    public function find_list_of_filters($ret_array)
+    {
+    	$list_of_filters=array();
+    	if(count($ret_array) == 3) // only user query search is perform no aggregation is require
+    	{
+    		for ($i = 0; $i < count($ret_array[1]); $i = $i+1)
+       		{
+    			$list_of_filters[$i][0] = $ret_array[1][$i];
+    			$list_of_filters[$i][1] = 50; //any non zero element
+    		}
+    	}
+    	else 					// aggregation is require for user options
+    	{
+
+    		for ($i = 0; $i < count($ret_array[3]); $i = $i+1)
+       		{
+    			$list_of_filters[$i][0] = $ret_array[3][$i]['key'];
+    			$list_of_filters[$i][1] = $ret_array[3][$i]['doc_count'];
+    		}
+    		
+
+    	}
+
+    	return $list_of_filters;
+
+    }
+
+// ############################################################################################################################################
  }
 ?>
