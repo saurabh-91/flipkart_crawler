@@ -23,21 +23,26 @@ curl -XGET 'http://localhost:9200/flipkart_data/mobile/_search?pretty' -d '{
         "filter_scope": {
           "filter": {
             "query": {
-              "match": {
-                "title": "4 gb ram"
+              "match_all": {
+                
               }
             }
           },
           "aggs": {
             "avg_price": {
               "terms": {
-                "field": "brand"
+                "field": "brand","min_doc_count":1,"size":0
               }
-            },"avg_price1": {
-              "terms": {
-                "field": "os"
-              }
+            },"price_ranges" : {
+            "range" : {
+                "field" : "price",
+                "ranges" : [
+                    { "to" : 10000},
+                    { "from" : 10000, "to" : 20000 },
+                    { "from" : 20000, "to": 35000 }
+                ]
             }
+        }
           }
           
         }
