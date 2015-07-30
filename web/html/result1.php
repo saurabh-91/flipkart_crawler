@@ -2,24 +2,18 @@
 <?php
 include ("final_query.php");
 include ("constants.php");
-$bname=$_POST['brand_name'];
 $page_no=0;
-//$ini_query = "";
-$ini_brand_size=0;
-$user_query_string = $_POST['search'];// user query
-$selected_brand_name  =  $_POST['brand_name'];
-$selected_price_range =  $_POST['price_range'];
+$user_query_string	  = $_POST['search'];// user query
+$selected_brand_name  = $_POST['brand_name'];
+$selected_os_name	  = $_POST['os_name'];
+$selected_price_range = $_POST['price_range'];
 if(!isset($user_query_string)) // if search is not perform
 {
 	$page_no        = $_POST['from'];
 	$iquery      	= $_POST['initial_query'];
-	echo "yo".$iquery;
-	$ibrand_size    = $_POST['initial_size_of_brand'];
 }
 $es_client 		 =  new SearchElastic();
-$ret_array 		 =  $es_client->perform_es($user_query_string, $selected_brand_name, $iquery, $selected_price_range, $page_no);
-//var_dump(json_encode($ret_array));
-//$list_of_filters =  $es_client->find_list_of_filters($ret_array);
+$ret_array 		 =  $es_client->perform_es($user_query_string, $selected_brand_name, $iquery, $selected_price_range, $page_no, $selected_os_name);
 ?>
 
 <!DOCTYPE html>
@@ -62,16 +56,31 @@ Search:<br>
 
 
 <!-- #############################################################  display filter in checkbox format ####################################################### -->
-<form  name="my_form" form id = "brand-fliter" action ="result1.php" method="post" >
+<form  name="my_form" form id = "brand-fliter" action ="result1.php" method="post"  >
+	<H1>Brands</H1>
 
 <?php for ($i = 0; $i < count($ret_array[1]); $i = $i+1)
     { ?>
-    <input type="checkbox" name="brand_name[]" class="brand_id" onchange="my_function()" value="<?php echo $ret_array[1][$i]; ?>"<?php if(in_array($ret_array[1][$i],$bname)&&!(isset($_POST["search"]))) echo SHOWCHECKED ;?>><?php echo $ret_array[1][$i]; ?><br>
+    <input type="checkbox" name="brand_name[]" class="brand_id" onchange="my_function()" value="<?php echo $ret_array[1][$i]; ?>"<?php if(in_array($ret_array[1][$i],$selected_brand_name)&&!(isset($_POST["search"]))) echo SHOWCHECKED ;?>><?php echo $ret_array[1][$i]; ?><br>
        
         <?php 
-    }?>    
+    }?>   
+
+    <H1>os</H1>
+
+
+
+    <?php for ($i = 0; $i < count($ret_array[3]); $i = $i+1)
+    { ?>
+    <input type="checkbox" name="os_name[]" class="os_id" onchange="my_function()" value="<?php echo $ret_array[3][$i]; ?>"<?php if(in_array($ret_array[3][$i],$selected_os_name)&&!(isset($_POST["search"]))) echo SHOWCHECKED ;?>><?php echo $ret_array[3][$i]; ?><br>
+       
+        <?php 
+    }?>
+
+
     <input type="hidden"   name="initial_query" value="<?php echo $es_client->ini_query;?>">
     <input type="hidden"    id="page_id" 	name="from" value="<?php echo $page_no; ?>">
+    <H1>price range</H1>
     <?php if($ret_array[2][0]) echo '<input class="range_id" type="checkbox" name="price_range[]" value="8888"   '?><?php if(isset($_POST["price_range"][0])) echo SHOWCHECKED;?> <?php if($ret_array[2][0]) echo ' >0-10000  <br>' ?>
     <?php if($ret_array[2][1]) echo '<input class="range_id" type="checkbox" name="price_range[]" value="18888"  '?><?php if(isset($_POST["price_range"][1])) echo SHOWCHECKED;?><?php if($ret_array[2][1]) echo '  >10000-20000 <br>' ?>
     <?php if($ret_array[2][2]) echo '<input class="range_id" type="checkbox" name="price_range[]" value="28888"  '?><?php if(isset($_POST["price_range"][2])) echo SHOWCHECKED;?><?php if($ret_array[2][2]) echo ' >20000-35000 <br>' ?>
@@ -91,8 +100,7 @@ Search:<br>
 	{
 		flag=1;
 		var elem   = document.getElementById("page_id");
-			elem.value=0;
-		
+			elem.value=0;		
 	}
 	function next_page() 
 	{

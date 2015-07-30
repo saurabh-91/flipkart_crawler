@@ -16,7 +16,7 @@ class SearchElastic
 // ###########################################################################################################################################
 
 // ######################################### only this function depends on user input ########################################################	 
-    public function perform_es($user_query_string, $selected_brand_name, $iquery, $selected_price_range, $page_no)//depent on user input which opretion to perform
+    public function perform_es($user_query_string, $selected_brand_name, $iquery, $selected_price_range, $page_no, $selected_os_name)//depent on user input which opretion to perform
     {
     	if (isset($user_query_string))
     	{ 	//call search function;
@@ -24,7 +24,7 @@ class SearchElastic
     	}
 	    else
 	    {	//call filtered search function
-	    	$ret_array            =  $this->filtered_query($selected_brand_name, $iquery, $selected_price_range, $page_no);
+	    	$ret_array            =  $this->filtered_query($selected_brand_name, $iquery, $selected_price_range, $page_no, $selected_os_name);
 	    }
 	    return $ret_array;
     }
@@ -38,6 +38,7 @@ class SearchElastic
         $retDoc = $client->search($searchParams);//echo json_encode($retDoc);
         $brand_list_temp = $retDoc['aggregations']['global_agg']['filter_scope']['brand_bucket']['buckets'];
         $price_range_list_temp = $retDoc['aggregations']['global_agg']['filter_scope']['price_range_bucket']['buckets'];
+        $os_list_temp = $retDoc['aggregations']['global_agg']['filter_scope']['os_bucket']['buckets'];
         $retDoc = $retDoc[hits][hits];
     	$brand_list=array();
         for ($i=0; $i < 10; $i = $i+1)
@@ -48,13 +49,18 @@ class SearchElastic
         {
             $brand_list[$i]=$brand_list_temp[$i]['key']; 
         }
+        for ($i = 0; $i < count($os_list_temp); $i = $i+1)
+        {
+            $os_list[$i]=$os_list_temp[$i]['key']; 
+        }
+        
         //var_dump($brand_list);
         //die();
         for ($i = 0; $i < count($price_range_list_temp); $i = $i+1)
         {
             $price_range_list[$i]= $price_range_list_temp[$i]['doc_count'];  
         }
-        return array($table_array, $brand_list, $price_range_list);
+        return array($table_array, $brand_list, $price_range_list, $os_list);
 
     }
 // ###########################################################################################################################################
@@ -154,13 +160,10 @@ class SearchElastic
 	            $filter["range"]['price']['gte'] = $lower_limit;
 	            $filter["range"]['price']['lt']  = $upper_limit;
 	            array_push($range_array, $filter);
-	           
 	        }
-
     	$range_filter                   = array();
         $range_filter['bool']['should'] = $range_array;
         return $range_filter;
-       
     }
 // ###########################################################################################################################################
 
@@ -195,7 +198,11 @@ class SearchElastic
     	$aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['brand_bucket']['terms']['size'] = 0;
         $aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['brand_bucket']['terms']['min_doc_count'] =1;
         //------------------------------------------------------------------------------------------------------------------
-        
+        //----------------------------------- os aggregation ------------------------------------------------------------
+        $aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['os_bucket']['terms']['field'] = "os";
+        $aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['os_bucket']['terms']['size'] = 0;
+        $aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['os_bucket']['terms']['min_doc_count'] =1;
+        //------------------------------------------------------------------------------------------------------------------
         //----------------------------------- price range aggregation ------------------------------------------------------------
         $aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['price_range_bucket']['range']['field'] = "price";
         $price_range_array=array();
@@ -210,18 +217,17 @@ class SearchElastic
         $temp['from']='50000'; $temp['to']='1550000';
         array_push($price_range_array, $temp);
         $aggregation_array['global_agg']['aggs']['filter_scope']['aggs']['price_range_bucket']['range']['ranges'] = $price_range_array;
-
         //------------------------------------------------------------------------------------------------------------------
     	return $aggregation_array;
     }
 // ###########################################################################################################################################
 
 // ############################################## filtered query (for filtering user search) #################################################
-    public function filtered_query($selected_brand_name, $iquery, $selected_price_range, $page_no)
+    public function filtered_query($selected_brand_name, $iquery, $selected_price_range, $page_no, $selected_os_name)
     {
         $brand_filter      = $this->brand_filter_builder($selected_brand_name);		// call brand filter builder
         $range_filter      = $this->range_filter_builder($selected_price_range); 	// call range filter builder
-       // $os_filter 		   = $this->os_filter_builder($selected_os_name); 		// call os 	  filter builder
+        $os_filter 		   = $this->os_filter_builder($selected_os_name); 		// call os 	  filter builder
         $initial_query     = $this->initial_query_builder($iquery);				// call initial search builder
         $aggregation_array = $this->aggregations_builder($iquery);// call aggregations   builder
         // combine all the filtered in must array
@@ -231,10 +237,10 @@ class SearchElastic
         {
         	array_push($must_array, $brand_filter);
         }
-        /*if($os_filter)
+        if($os_filter)
         {
         	array_push($must_array, $os_filter);
-        }*/
+        }
         array_push($must_array, $range_filter);
 	    // combine aggregation ,filters,initial user query 
     	$searchParams=$this->get_es_index_params(INDEX, TYPE, SIZE);
