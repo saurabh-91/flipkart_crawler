@@ -42,9 +42,10 @@ def insert(ind_id,title,name,brand,price,link,i_link,feature,ram,os):
                 'os':os,
                 
                 }    
-    r.hset('flip_hash',ind_id,doc) #redis client insert
-    res=es.index(index="flipkart_data",doc_type='mobile', id=ind_id, body=doc,ignore=[400,401,409]) # elasticsearch client insertion
+    r.hset('flipkart_hash',ind_id,doc) #redis client insert
+    res=es.index(index="flipkart_new",doc_type='mobile', id=ind_id, body=doc,ignore=[400,401,409]) # elasticsearch client insertion
     #  for test
+    ind_id=str(ind_id);
     feature=str(feature) # convert to string       
     cur.execute("INSERT INTO masterdetails VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",(ind_id,title,name,brand,price,link,i_link,feature,ram,os)) # mysql db insert
     db.commit() # mysql commit
@@ -66,13 +67,41 @@ class FlipkartSpider(Spider):
         item=response.meta['item']
         mem=''.join(response.xpath('//tr[td/text()="Memory"]/td[2]/text()').extract()).strip()
         i=mem.find("RAM");#starting index of ram 
-        item['ram']=mem[:i-1]
-        os=''.join(response.xpath('//tr[td/text()="OS"]/td[2]/text()').extract()).strip()
-        i=os.find(" ");
-        if(i<0):
-            item['os']=os
+        #item['ram']=mem[:i-1]
+        if(i>0):
+            i=mem[:i-1]
+            j=i.find("KB")
+            k=i.find("MB")
+            if(j>0):
+                t=i[:j-1]
+                t=float(t)
+                t=t/(1024*1024)
+                #t=t+" GB"
+                item['ram']=t
+            
+            elif(k>0):
+                t=i[:k-1]
+                t=float(t)
+                t=t/(1024)
+                #t=t+" GB"
+                item['ram']=t
+            else :
+                j=i.find("GB")
+                t=i[:j-1]
+                t=float(t)
+                item['ram']=t
         else:
-            item['os']=os[:i]
+            item['ram']="NA"
+
+        os=''.join(response.xpath('//tr[td/text()="OS"]/td[2]/text()').extract()).strip()
+        if(os):
+            i=os.find(" ");
+            if(i<0):
+                item['os']=os
+            else:
+                item['os']=os[:i]
+        else:
+            item['os']="NA"
         item['title']=''.join(response.xpath('//title/text()').extract()).strip()
         item['desc']=''.join(response.xpath('//div[@class="rpdSection"]/p[1]/text()').extract())
         item['details']=','.join(response.xpath('//div[@class="specifications-wrap line unit"]/ul[1]/li/text()').extract())
