@@ -33,31 +33,8 @@ Search:<br>
 </form>
 
 <!-- ########################################################################################################################### -->
-<div style="float:left; width:50%;">
-<table>
-  <tr>
-    <th>name</th>
-    <th>brand</th>
-    <th>Price</th>
-    <th>image</th>
-    <th>view_details</th>
-  </tr>
-  <?php for ($i=0; ($ret_array[0][$i])&&($i<count($ret_array[0])); $i=$i+1){?>
-      <tr>
-        <td><?php echo $ret_array[0][$i][_source][name]?></td>
-        <td><?php echo $ret_array[0][$i][_source][brand]?></td>
-        <td><?php echo $ret_array[0][$i][_source][price]?></td>
-        <td><img src="<?php echo $ret_array[0][$i][_source][i_link];?>" style="width:100px;height:228px"> </td>
-        <?php $id =$ret_array[0][$i][_id]; ?>
-
-        <td><a href="details_page.php?id=<?php echo $id ?>">click here</a> </td>
-
-      </tr>
-      <?php } ?>
-</table>
-</div>
 <!-- #############################################################  display filter in checkbox format ####################################################### -->
-<div style="float:left; width:13%;">
+<div style="float:left; width:20%;">
 <form  name="my_form" form id = "brand-fliter" action ="query_result.php" method="post"  >
 	<H1>Brands</H1>
 <?php for ($i = 0; $i < count($ret_array[1]); $i = $i+1)
@@ -66,17 +43,13 @@ Search:<br>
 
         <?php
     }?>
-</div>
-<div style="float:left; width:13%;">
     <H1>Price Range</H1>
     <?php for ($i = 0; $i < count($ret_array[2]); $i = $i+1)
-    { ?>
-        <input type="checkbox" name="price_range[]" onchange="change()" value="<?php echo $ret_array[2][$i]; ?>"<?php if(in_array($ret_array[2][$i],$selected_price_range)&&!(isset($_POST["search"]))) echo SHOWCHECKED ;?>><?php if($ret_array[2][$i]=="50000 - 1550000"){echo "50000 and Above";} else {echo $ret_array[2][$i];} ?><br>
+    { $flag=$ret_array[2][$i][1];?>
+        <?php if($flag)echo '<input type="checkbox" name="price_range[]" onchange="change()" value="';?><?php if($flag)echo $ret_array[2][$i][0]; ?><?php if($flag)echo'"'; if(in_array($ret_array[2][$i][0],$selected_price_range)&&!(isset($_POST["search"]))) echo SHOWCHECKED ;?><?php if($flag){echo '>';if($ret_array[2][$i][0]=="50000 - 1550000"){echo "50000 and Above";} else {echo $ret_array[2][$i][0];}} ?><?php if($flag)echo'<br>';?>
 
         <?php
     }?>
-</div>
-<div style="float:left; width:13%;">
     <H1>OS</H1>
     <?php for ($i = 0; $i < count($ret_array[3]); $i = $i+1)
     { ?>
@@ -84,13 +57,10 @@ Search:<br>
 
         <?php
     }?>
-    </div>
-<div style="float:left; width:13%;">
     <H1>Ram</H1>
     <?php for ($i = 0; $i < count($ret_array[4]); $i = $i+1)
-    { ?>
-        <input type="checkbox" name="ram_range[]" onchange="change()" value="<?php echo $ret_array[4][$i]; ?>"<?php if(in_array($ret_array[4][$i],$selected_ram_range)&&!(isset($_POST["search"]))) echo SHOWCHECKED ;?>><?php if($ret_array[4][$i]=="4 - 15"){echo "4 GB and Above";} else {echo $ret_array[4][$i]." GB";} ?><br>
-
+    {  $flag=$ret_array[4][$i][1];?>
+        <?php if($flag)echo '<input type="checkbox" name="ram_range[]" onchange="change()" value="';?><?php if($flag)echo $ret_array[4][$i][0]; ?><?php if($flag)echo'"'; if(in_array($ret_array[4][$i][0],$selected_ram_range)&&!(isset($_POST["search"]))) echo SHOWCHECKED ;?><?php if($flag){echo '>';if($ret_array[4][$i][0]=="4 - 15"){echo "4 GB and Above";} else {echo $ret_array[4][$i][0]." GB";}} ?><?php if($flag)echo'<br>';?>
         <?php
     }?>
     <input type="hidden"   name="initial_query" value="<?php echo $es_client->initial_user_query;?>">
@@ -103,6 +73,42 @@ Search:<br>
     
 </form>
     </div>
+
+
+
+
+<div style="float:left; width:50%;">
+<table>
+<col width="1000">
+  <col width="2500">
+  <col width="200">
+  <col width="200">
+  <tr>
+    <th>image</th>
+
+    <th>name</th>
+    
+    <th>brand</th>
+    
+    <th>price</th>
+    
+    <th>view_details</th>
+  </tr>
+  <?php for ($i=0; ($ret_array[0][$i])&&($i<count($ret_array[0])); $i=$i+1){?>
+      <tr>
+      <td><img src="<?php echo $ret_array[0][$i][_source][i_link];?>" style="width:80px;height:150px"> </td>
+        <?php $id =$ret_array[0][$i][_id]; ?>
+        <td><?php echo $ret_array[0][$i][_source][name]?></td>
+        <td><?php echo $ret_array[0][$i][_source][brand]?></td>
+        <td><?php echo $ret_array[0][$i][_source][price]?></td>
+        
+
+        <td><a href="details_page.php?id=<?php echo $id ?>">click here</a> </td>
+
+      </tr>
+      <?php } ?>
+</table>
+</div>
 
 <script type="text/javascript">
 	var flag=0;
@@ -133,8 +139,5 @@ Search:<br>
 
 
 </script>
-</body>
-</html>
-
 </body>
 </html>

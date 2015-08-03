@@ -1,6 +1,6 @@
 <?php
-include("constants.php");
-require_once 'vendor/autoload.php';
+include "constants.php";
+require "vendor/autoload.php";
 class SearchElastic 
 {
     public $initial_user_query;
@@ -15,7 +15,7 @@ class SearchElastic
    }
 // ###########################################################################################################################################
 
-// ######################################### only this function depends on user input ########################################################	 
+// ######################################### main function (execution start from here) ########################################################
     public function perform_es($user_query_string, $selected_brand_name, $iquery, $selected_price_range, $page_no, $selected_os_name, $selected_ram_range)//depent on user input which opretion to perform
     {
     	if (isset($user_query_string))
@@ -33,8 +33,9 @@ class SearchElastic
 // ################################################# get results for html ####################################################################
     public function get_results_for_html_display($searchParams)
     {
-
-        $client                         = new Elasticsearch\Client();
+        $params = array();
+        $params['hosts']=array(ESHOST);
+        $client                         = new Elasticsearch\Client($params);
         $get_elasticsearch_result       = $client->search($searchParams);//echo json_encode($get_elasticsearch_result);
         $brand_list_array_temp          = $get_elasticsearch_result['aggregations']['global_agg']['filter_scope']['brand_bucket']['buckets'];
         $price_range_list_array_temp    = $get_elasticsearch_result['aggregations']['global_agg']['filter_scope']['price_range_bucket']['buckets'];
@@ -42,7 +43,6 @@ class SearchElastic
         $ram_range_list_array_temp      = $get_elasticsearch_result['aggregations']['global_agg']['filter_scope']['ram_range_bucket']['buckets'];
         $get_elasticsearch_result       = $get_elasticsearch_result[hits][hits];
     	$brand_list_array               = array();
-        //echo "page".$page_no;
         for ($i=0; $i < 10; $i = $i+1)
         {
             $result_array_for_html_table[$i] = $get_elasticsearch_result[$i];
@@ -61,7 +61,8 @@ class SearchElastic
             $pos                        = strpos($temp, '-');
             $lower_linit                = substr($temp, 0, $pos-2);
             $upper_limit                = substr($temp, $pos+1, -2);
-            $price_range_list_array[$i] = $lower_linit.' - '.$upper_limit;
+            $price_range_list_array[$i][0] = $lower_linit.' - '.$upper_limit;
+            $price_range_list_array[$i][1] = $price_range_list_array_temp[$i]['doc_count'];
         }
         for ($i = 0; $i < count($ram_range_list_array_temp); $i = $i+1)
         {
@@ -69,7 +70,8 @@ class SearchElastic
             $pos                        = strpos($temp, '-');
             $lower_linit              = substr($temp, 0, $pos-2);
             $upper_limit              = substr($temp, $pos+1, -2);
-            $ram_range_list_array[$i] = $lower_linit.' - '.$upper_limit;
+            $ram_range_list_array[$i][0] = $lower_linit.' - '.$upper_limit;
+            $ram_range_list_array[$i][1]                    = $ram_range_list_array_temp[$i]['doc_count'];
         }
         return array($result_array_for_html_table, $brand_list_array, $price_range_list_array, $os_list_array, $ram_range_list_array);
 
@@ -85,7 +87,7 @@ class SearchElastic
         $searchParams=$this->get_es_index_params(INDEX, TYPE, SIZE);
         if($user_query_string) // check condition for null search query
         {
-        	$searchParams['body']['query']['match']['title'] = $user_query_string;
+        	$searchParams['body']['query']['match']['title'] = $user_query_string; // perform search on title field
         }
         else
         {
@@ -131,7 +133,7 @@ class SearchElastic
         return $os_filter;
     }
 // ###########################################################################################################################################
-// // ###########################################  build ram filter ########################################################################### 
+// ##############################################  build ram filter ###########################################################################
     public function ram_range_filter_builder($selected_ram_range)
     {
         $ram_range_array=array();
@@ -247,16 +249,16 @@ class SearchElastic
     	$aggregation_query['global_agg']['aggs']['filter_scope']['filter']['query']['match']['title'] = $iquery;
         else 
         $aggregation_query['global_agg']['aggs']['filter_scope']['filter']['query']['match_all'] = new StdClass();
-    	//----------------------------------- brand aggregation ------------------------------------------------------------
+    	//----------------------------------- brand aggregation ------------------------------------------------------------------
         $aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['brand_bucket']['terms']['field'] = "brand";
     	$aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['brand_bucket']['terms']['size'] = 0;
         $aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['brand_bucket']['terms']['min_doc_count'] =1;
-        //------------------------------------------------------------------------------------------------------------------
-        //----------------------------------- os aggregation ------------------------------------------------------------
+        //------------------------------------------------------------------------------------------------------------------------
+        //----------------------------------- os aggregation ---------------------------------------------------------------------
         $aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['os_bucket']['terms']['field'] = "os";
         $aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['os_bucket']['terms']['size'] = 0;
         $aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['os_bucket']['terms']['min_doc_count'] =1;
-        //------------------------------------------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------------------------------------------------
         //----------------------------------- price range aggregation ------------------------------------------------------------
         $aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['price_range_bucket']['range']['field'] = "price";
         $price_range_array=array();
@@ -271,8 +273,8 @@ class SearchElastic
         $temp['from']='50000'; $temp['to']='1550000';
         array_push($price_range_array, $temp);
         $aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['price_range_bucket']['range']['ranges'] = $price_range_array;
-        //------------------------------------------------------------------------------------------------------------------
-        //----------------------------------- ram range aggregation ------------------------------------------------------------
+        //------------------------------------------------------------------------------------------------------------------------
+        //----------------------------------- ram range aggregation --------------------------------------------------------------
         $aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['ram_range_bucket']['range']['field'] = "ram";
         $ram_range_array=array();
         $temp['from']='0'; $temp['to']='1';
@@ -286,7 +288,7 @@ class SearchElastic
         $temp['from']='4'; $temp['to']='15';
         array_push($ram_range_array, $temp);
         $aggregation_query['global_agg']['aggs']['filter_scope']['aggs']['ram_range_bucket']['range']['ranges'] = $ram_range_array;
-        //------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------
 
 
     	return $aggregation_query;

@@ -1,6 +1,6 @@
 
 <?php
-require_once "predis/autoload.php";
+require "predis/autoload.php";
 include "constants.php";
 Predis\Autoloader::register();
 $product_id = $_GET['id'];
@@ -10,10 +10,10 @@ class RedisResult
     public function get_redis_client($redis_scheme, $redis_host, $redis_port, $redis_db)
     {
         $redis_client = new Predis\Client(array(
-            "scheme" => $redis_scheme,
-            "host"   => $redis_host,
-            "port"   => $redis_port,
-            "db"     => $redis_db));
+             "scheme" => $redis_scheme,
+             "host"   => $redis_host,
+             "port"   => $redis_port,
+             "db"     => $redis_db));
         return $redis_client;
 
     }
@@ -23,15 +23,15 @@ class RedisResult
         try
         {
             $detail = $redis->hget(REDIS_HASH, $product_id);
+            // --------------- for display do some BC ----------------------------
             $detail = str_replace("u'", "", $detail);
             $detail = str_replace("'", "", $detail);
             $detail = str_replace(": ,", "", $detail);
             $detail = str_replace("http://", "", $detail);
             $detail = str_replace("https://", "", $detail);
-            /*$detail=str_replace(":","=>",$detail);
-            $detail=substr($detail,1);*/
             $detail = str_replace(",", "\n", $detail);
             echo nl2br($detail);
+            // --------------------------------------------------------------------
         }
         catch (Exception $e)
         {
@@ -76,11 +76,5 @@ class RedisResult
 $client_redis= new RedisResult();
 $client_redis->get_detail_from_redis($product_id);
 
+
 ?>
-<!DOCTYPE html>
-<html>	
-<head>
-</head>
-<body>
-</body>
-</html>
