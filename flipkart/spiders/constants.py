@@ -1,6 +1,6 @@
 ############################################### es constants #############################################################
 ES_HOST  = "127.0.0.1:9200" 		# elasticsearch host
-ES_INDEX = "flipkart_new"	# elasticsearch index
+ES_INDEX = "flipkart"	# elasticsearch index
 ES_TYPE  = "mobile"					# elastcsearch index's type
 
 ##########################################################################################################################

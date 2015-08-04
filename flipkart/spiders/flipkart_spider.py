@@ -32,8 +32,6 @@ if (cur == 0):
 r = redis.StrictRedis(host="localhost", port=6379, db=0) #redis client (somthing went wrong by using constats)
 ####################################################################################################
 
-
-
 ######################################## insert into redis #########################################
 def insert_into_redis(ind_id, doc):
     #doc = json.dumps(doc)
@@ -46,7 +44,7 @@ def insert_into_redis(ind_id, doc):
 
 ######################################## insert into mysql #########################################
 def insert_into_mysql(ind_id, title, name, brand, price, link, i_link, feature, ram, os):
-    error_test = cur.execute("INSERT INTO masterdetails VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (ind_id, title, name, brand, price, link, i_link, feature, ram, os)) # mysql db insert
+    error_test = cur.execute("INSERT INTO test VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (ind_id, title, name, brand, price, link, i_link, feature, ram, os)) # mysql db insert
     if (error_test==0):
         print "mysql insertion failed"
     db.commit() # mysql commit
@@ -77,6 +75,7 @@ def insert(ind_id, title, name, brand, price, link, i_link, feature, ram, os):
                 'os'      : os,
                 
                 } 
+    #dict_to_redis_hset(ind_id,doc)
     insert_into_redis(ind_id, doc)   
     insert_into_es(ind_id, doc)
     ind_id  = str(ind_id)
