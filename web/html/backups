@@ -31,7 +31,7 @@ curl -XGET 'http://localhost:9200/flipkart_data/mobile/_search?pretty' -d '{
           "aggs": {
             "avg_price": {
               "terms": {
-                "field": "brand","min_doc_count":1,"size":0
+                "field": "ram","min_doc_count":1,"size":0
               }
             },"price_ranges" : {
             "range" : {
@@ -50,7 +50,7 @@ curl -XGET 'http://localhost:9200/flipkart_data/mobile/_search?pretty' -d '{
       }
       }
 
-,"query":{"filtered":{"filter":{"bool":{"must":[{"terms":{"brand":["T-Max","ZEN","ZTE"]}},{"bool":{"should":[{"range":{"price":{"gte":0,"lt":10000}}}]}}]}},"query":{"match":{"title":"apple"}}}},"size":2000
+,"query":{"filtered":{"filter":{"bool":{"must":[{"bool":{"should":[{"range":{"price":{"gte":0,"lt":10000}}},{"range":{"price":{"gte":1000,"lt":20000}}}]}},{"bool":{"should":[{"range":{"ram":{"gte":0,"lt":1}}},{"range":{"ram":{"gte":0,"lt":4}}}]}}]}},"query":{"match":{"title":"4 gb ram"}}}},"size":2000
 }
 '
 
@@ -89,14 +89,21 @@ curl -XGET 'http://localhost:9200/flipkart_data/mobile/_search?pretty' -d '{
 
 
 test
-curl -XGET 'http://localhost:9200/flipkart_data/mobile/_search?pretty' -d '{
-  "query":{"filtered":{"filter":{"bool":{"must":[{"terms":{"brand":["T-Max","ZEN","ZTE"]}},{"bool":{"should":[{"range":{"price":{"gte":0,"lt":10000}}}]}}]}},"query":{"match":{"title":"4 gb ram"},"aggregations": {
-    "my_agg": {
-      "terms": {
-        "field":"brand","min_doc_count":0,"size":50
-      }
-    }
-  }}}},"size":2000
+curl -XGET 'http://localhost:9200/flipkart_final_data/mobile/_search?pretty' -d '
+{
+  "query":{
+  "filtered":{
+  "filter":{
+  "bool":{
+  "must":[{
+  "bool":{
+  "should":[{
+  "range":{"price":{"gte":0,"lt":10000}}},
+  {"range":{"price":{"gte":10000,"lt":20000}}}
+  ]}},{
+  "bool":{
+  "should":[{
+  "range":{"ram":{"gte":3,"lt":4}}}]}}]}},"query":{"match":{"title":"4 gb ram"}}}},"size":2000
 }
 '
 
@@ -162,3 +169,64 @@ Branch address: Citibank N.A. Delhi
 
 
 show hide next and prev buttons on change within the form
+
+
+correct ram mapping
+
+
+
+
+
+
+
+
+
+
+
+
+"query":{"filtered":{"filter":{"bool":{"must":[{"bool":{"should":[{"range":{"ram":{"gte":0,"lt":1}}}]}}]}},"query":{"match_all":{}}}},"size":2000
+}
+'
+
+
+
+
+
+scrapy backup
+
+
+inside insert function
+
+#r.hset('test', ind_id, doc) #redis client insert
+    #res = es.index(index = ES_INDEX, doc_type = ES_TYPE, id = ind_id, body = doc, ignore = [400,401,409]) # elasticsearch client insertion
+    #  for test
+    #cur.execute("INSERT INTO test VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (ind_id, title, name, brand, price, link, i_link, feature, ram, os)) # mysql db insert
+    #db.commit() # mysql commit
+
+
+
+
+
+
+
+
+mapping
+
+
+
+
+
+curl -XPUT 'localhost:9200/flipkart_test' -d'
+ {"mappings": {
+     "mobile" : {
+       "properties" : {
+         "brand" : {
+           "type" :   "string","index":"not_analyzed"
+         },
+         "os" : {
+           "type" :   "string","index":"not_analyzed"
+         }}}}}'
+
+
+
+

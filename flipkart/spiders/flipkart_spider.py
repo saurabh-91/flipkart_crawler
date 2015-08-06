@@ -10,6 +10,7 @@ import MySQLdb
 import redis
 import hashlib
 import json
+import sys
 from constants import *
 ###################################################################################################
 es = Elasticsearch([ES_HOST]) # elastcsearch client 
@@ -29,28 +30,20 @@ if (cur == 0):
 
 
 ############################################## redis client ########################################
-r = redis.StrictRedis(host="localhost", port=6379, db=0) #redis client (somthing went wrong by using constats)
+r = redis.StrictRedis(host=R_HOST, port=R_PORT, db=R_DB) #redis client
 ####################################################################################################
 
 ######################################## insert into redis #########################################
-def insert_into_redis(ind_id, doc):
-    #doc = json.dumps(doc)
-    error_test = r.hset('flipkart_hash', ind_id, doc) #redis client insert
-    if(error_test==0):
-        print "redis insertion failed"
+def dict_to_redis_hset(r, hkey, dict_to_store):
+    return all([r.hset(hkey, k, v) for k, v in dict_to_store.items()])
 ####################################################################################################
-
-
 
 ######################################## insert into mysql #########################################
-def insert_into_mysql(ind_id, title, name, brand, price, link, i_link, feature, ram, os):
-    error_test = cur.execute("INSERT INTO test VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (ind_id, title, name, brand, price, link, i_link, feature, ram, os)) # mysql db insert
-    if (error_test==0):
-        print "mysql insertion failed"
-    db.commit() # mysql commit
+def insert_into_mysql(ind_id, doc):
+    for key_name in doc:
+        cur.execute("INSERT INTO test(index_id,key_name,key_value) VALUES(%s, %s, %s)", (ind_id, key_name, str(doc[key_name])))
+    db.commit()
 ####################################################################################################
-
-
 
 ######################################## insert into elasticsearch  #################################
 def insert_into_es(ind_id, doc):
@@ -59,37 +52,34 @@ def insert_into_es(ind_id, doc):
         print "elasticsearch insertion failed"
 ####################################################################################################
 
-
 ######################################## insert into redis, mysql,elasticsearch ####################
-def insert(ind_id, title, name, brand, price, link, i_link, feature, ram, os):
-    
-    doc = {                         # make a json like doc for insertion into redis elasticsearch
-                'name'    : name,
-                'price'   : price,
-                'link'    : link,
-                'brand'   : brand,
-                'title'   : title,
-                'i_link'  : i_link,
-                'feature' : feature,
-                'ram'     : ram,
-                'os'      : os,
+def insert(item):
+    doc = {
+                NAME          : item[NAME],
+                PRICE         : item[PRICE],
+                LINK          : item[LINK],
+                BRAND         : item[BRAND],
+                TITLE         : item[TITLE],
+                IMAGE_LINK    : item[IMAGE_LINK],
+                FULL_FEATURE  : item[FULL_FEATURE],
+                RAM           : item[RAM],
+                OS            : item[OS],
                 
-                } 
-    #dict_to_redis_hset(ind_id,doc)
-    insert_into_redis(ind_id, doc)   
+                }
+    ind_id = item[INDEX_ID]
+    ind_id = INITIAL_PREFIX_OF_INDEX_ID+ind_id
+    dict_to_redis_hset(r,ind_id, doc)
     insert_into_es(ind_id, doc)
-    ind_id  = str(ind_id)
-    feature = str(feature) # convert to string  
-    insert_into_mysql(ind_id, title, name, brand, price, link, i_link, feature, ram, os) 
+    insert_into_mysql(ind_id, doc) 
     
- ####################################################################################################
+####################################################################################################
 
 
 ############################################## main scrapy class ####################################
 class FlipkartSpider(Spider):
-    name            = "flipkart"
-    allowed_domains = ["flipkart.com"]
-    orig            = "http://www.flipkart.com/mobiles/pr?sid=tyy,4io&start=";
+    name            = SPIDER_NAME
+    allowed_domains = [ALLOWED_DOMAINS]
+    orig            = ORIGIN_URL
     start_urls      = []
     for j in range(1, 1500, 20):
         x = orig+str(j)
@@ -99,7 +89,7 @@ class FlipkartSpider(Spider):
         item = response.meta['item']
         mem  = ''.join(response.xpath('//tr[td/text()="Memory"]/td[2]/text()').extract()).strip()
         i    = mem.find("RAM");#starting index of ram 
-        #item['ram']=mem[:i-1]
+        #item[RAM]=mem[:i-1]
         if(i>0):
             i = mem[:i-1]
             j = i.find("KB")
@@ -108,37 +98,37 @@ class FlipkartSpider(Spider):
                 t = i[:j-1]
                 t = float(t)
                 t = t/(1024*1024)
-                item['ram']=t
+                item[RAM]=t
             
             elif(k>0):
                 t = i[:k-1]
                 t = float(t)
                 t = t/(1024)
                 #t=t+" GB"
-                item['ram']=t
+                item[RAM]=t
             else :
                 j=i.find("GB")
                 t=i[:j-1]
                 t=float(t)
-                item['ram']=t
+                item[RAM]=t
         else:
-            item['ram']="NA"
+            item[RAM]="NA"
 
         os = ''.join(response.xpath('//tr[td/text()="OS"]/td[2]/text()').extract()).strip()
         if(os):
             i = os.find(" ");
             if(i<0):
-                item['os'] = os
+                item[OS] = os
             else:
-                item['os'] = os[:i]
+                item[OS] = os[:i]
         else:
-            item['os']  = "NA"
-        item['title']   = ''.join(response.xpath('//title/text()').extract()).strip()
+            item[OS]  = "NA"
+        item[TITLE]   = ''.join(response.xpath('//title/text()').extract()).strip()
         item['desc']    = ''.join(response.xpath('//div[@class="rpdSection"]/p[1]/text()').extract())
         item['details'] = ','.join(response.xpath('//div[@class="specifications-wrap line unit"]/ul[1]/li/text()').extract())
-        item['i_link']  = ''.join(response.xpath('//meta[@name="og_image"]/@content').extract())
-        item['brand']   = ''.join(response.xpath('//tr[td/text()="Brand"]/td[2]/text()').extract()).strip()
-        item['title']   =item['title'][:-15]
+        item[IMAGE_LINK]  = ''.join(response.xpath('//meta[@name="og_image"]/@content').extract())
+        item[BRAND]   = ''.join(response.xpath('//tr[td/text()="Brand"]/td[2]/text()').extract()).strip()
+        item[TITLE]   =item[TITLE][:-15]
         #ind_id=''.join(response.xpath('//div[@class="pincode-widget-container omniture-field"]/@data-pid').extract())
         feature   = {}
         full_desc = response.xpath('//table[@class="specTable"]')
@@ -152,11 +142,11 @@ class FlipkartSpider(Spider):
                 value = (''.join(r.xpath('./td[2]/text()').extract())).strip()
                 temp_sub_feature[key] = value
             feature[table_name] = temp_sub_feature
-        item['feature'] = feature
+        item[FULL_FEATURE] = feature
 
-
+        insert(item)
 #################################################### call insert function #########################################################
-        insert(item['ind_id'], item['title'], item['name'], item['brand'], item['price'], item['link'], item['i_link'], item['feature'], item['ram'], item['os'])
+        #insert(item[INDEX_ID], item[TITLE], item[NAME], item[BRAND], item[PRICE], item[LINK], item[IMAGE_LINK], item[FULL_FEATURE], item[RAM], item[OS])
         return item
 ###############################################################  main parser function  ###################################################################
     def parse(self, response):
@@ -167,13 +157,13 @@ class FlipkartSpider(Spider):
         for site in sites:
             #global ind_id
             item = FlipkartItem()
-            item['name'] = (''.join(site.xpath('.//div[@class="pu-title fk-font-13"]/a/text()').extract())).strip()
+            item[NAME] = (''.join(site.xpath('.//div[@class="pu-title fk-font-13"]/a/text()').extract())).strip()
             pri_ce = ''.join(site.xpath('.//span[@class="fk-font-17 fk-bold"]/text()').extract())
             pri_ce = pri_ce.replace("Rs. ","")
-            item['price'] = int(pri_ce.replace(",",""))
+            item[PRICE] = int(pri_ce.replace(",",""))
             initial = "https://flipkart.com"
             ul = initial+''.join(site.xpath('./div[1]/a[1]/@href').extract())
-            item['link'] = ul
+            item[LINK] = ul
             hash_object = hashlib.md5(ul)
-            item['ind_id'] = hash_object.hexdigest()
+            item[INDEX_ID] = hash_object.hexdigest()
             yield scrapy.Request(ul, meta={'item':item}, callback=self.parse_details)
