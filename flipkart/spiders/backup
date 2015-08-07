@@ -1,0 +1,113 @@
+
+test delete index
+
+es.indices.delete(index='test-index', ignore=[400, 404])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# find if the doc is already present if so then update the existing one else insert 
+
+
+
+# things to do
+#
+#
+# 1.first delete the index and then recreate it 
+# 2.after that do mapping 
+# 3.bulk insertion into mysql redis and elasticsearch
+
+
+
+
+http://www.flipkart.com/adcom-x4-lovee-dual-sim-mobile-black/p/itme8yatqxp4grh7?pid=MOBE8YATJHBC5FZ2&al=Z6CVg901r8va1767%2F5sNS8ldugMWZuE7Qdj0IGOOVquUw0B1uE1taeWQQBdDbThD4wW5ID1ity8%3D&ref=L%3A-4714280313777208816&srno=b_488
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# -*- coding: utf-8 -*-
+
+# Define here the models for your scraped items
+#
+# See documentation in:
+# http://doc.scrapy.org/en/latest/topics/items.html
+from scrapy.item import Item, Field
+import scrapy
+
+
+class CrawlingItem(scrapy.item):
+    ind_id=scrapy.Field()
+    name=scrapy.Field()
+    price=scrapy.Field()
+    link = scrapy.Field()
+
+class FlipkartItem(CrawlingItem):
+    # define the fields for your item here like:
+    # name = scrapy.Field()
+    #pass
+    ind_id=scrapy.Field()
+    name=scrapy.Field()
+    details=scrapy.Field()
+    price=scrapy.Field()
+    link = scrapy.Field()
+    i_link=scrapy.Field()
+    desc = scrapy.Field()
+    brand=scrapy.Field()
+    title=scrapy.Field()
+    feature=scrapy.Field()
+    ram=scrapy.Field()
+    os=scrapy.Field()
+    #general_feature=scrapy.Field() #includes brands, sim size, sim type, touchscreen, handset color, form, cell feature, model name, model id, in yhe box, e.t.c
+    #title= scrapy.Field()
+    #multimedia=scrapy.Field()
+    #camera=scrapy.Field()
+    #index=scrapy.Field()
+    #test=scrapy.Field()
+
+http://www.flipkart.com/adcom-x4-lovee-dual-sim-mobile-black/p/itme8yatqxp4grh7?pid=MOBE8YATJHBC5FZ2&al=Z6CVg901r8vcnEoSwvbDXsldugMWZuE7Qdj0IGOOVquUw0B1uE1taeWQQBdDbThD4wW5ID1ity8%3D&ref=L%3A1812906122513894243&srno=b_488

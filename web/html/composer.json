@@ -1,5 +1,6 @@
 {
     "require": {
-    "predis/predis": "1.1.*@dev"
+    "predis/predis": "1.1.*@dev",
+    "apache/log4php": "2.3.0"
     }
 }

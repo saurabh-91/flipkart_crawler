@@ -2,8 +2,38 @@
 require "predis/autoload.php";
 include "constants.php"; // all constants used in this file is defined in file named "constants.php"
 Predis\Autoloader::register();
+
+// ####################### common util class (it contains function which is used bt both class) ########################
+class CommonUtil  // this class will used some of the function of CommonUtil class
+{
+
+//  ##################################### get full feature details (full spec) #########################################
+    public function  get_details_of_product($product_details) // this function clean full spec and store into associative array
+    {
+        $detail = $product_details[FEATURE];
+        $detail = str_replace("u'", "", $detail);
+        $detail = str_replace("'", "", $detail);
+        $detail = str_replace(": ,", "", $detail);
+        $detail = str_replace("http://", "", $detail);
+        $detail = str_replace("https://", "", $detail);
+        $find_index = strpos($detail,"},");
+        $product_details['Warranty:']=substr($detail,12,$find_index-12);
+        $detail = str_replace("},", " {", $detail);
+        $detail = str_replace("}", "", $detail);
+        $detail=explode(" { ",$detail);
+        for ($i=0;$i<count($detail);$i=$i+2)
+        {
+            $product_details[$detail[$i]]=$detail[$i+1];
+        }
+        return $product_details;
+    }
+//  ####################################################################################################################
+
+}
+// #####################################################################################################################
+
 // ###################################### redis class for getting result from redis ####################################
-class RedisResult
+class RedisResult extends CommonUtil
 {
 //  ##################################### get_redis_client #############################################################
     public function get_redis_client($redis_scheme, $redis_host, $redis_port, $redis_db)
@@ -38,35 +68,13 @@ class RedisResult
         }
     }
 //  ####################################################################################################################
-
-//  ##################################### get full feature details (full spec) #########################################
-    public function  get_details_of_product($product_details)
-    {
-        $detail = $product_details[FEATURE];
-        $detail = str_replace("u'", "", $detail);
-        $detail = str_replace("'", "", $detail);
-        $detail = str_replace(": ,", "", $detail);
-        $detail = str_replace("http://", "", $detail);
-        $detail = str_replace("https://", "", $detail);
-        $find_index = strpos($detail,"},");
-        $product_details['Warranty:']=substr($detail,12,$find_index-12);
-        $detail = str_replace("},", " {", $detail);
-        $detail = str_replace("}", "", $detail);
-        $detail=explode(" { ",$detail);
-        for ($i=0;$i<count($detail);$i=$i+2)
-        {
-            $product_details[$detail[$i]]=$detail[$i+1];
-        }
-        return $product_details;
-    }
-//  ####################################################################################################################
 }
 //  ####################################### end of redis class #########################################################
 
 
 
 // ####################################### mysql class for getting result from mysql ###################################
-class MysqlResult extends RedisResult  // this class will used some of the function of RedisResult class
+class MysqlResult extends CommonUtil  // this class will used some of the function of CommonUtil class
 {
 
 //  ##################################### get_mysql_client #############################################################
@@ -86,6 +94,7 @@ class MysqlResult extends RedisResult  // this class will used some of the funct
         {
             die('Could not connect: ' . mysql_error());
         }
+
         echo nl2br("\n");
         echo nl2br("\n");
         echo "get result from mysql";

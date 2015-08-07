@@ -1,27 +1,23 @@
 
 <?php
-// not need to include the file "constants.php" because it already included in "main.php"
-include ("main.php");
-$page_no=0;
-if($_POST['page'])
-{
-    $page_no = $_POST['page'];
-}
-$iquery      	             = $_POST['initial_query'];
-$user_query_string	         = $_POST['search'];// user query
-$selected_brand_name         = $_POST['brand_name'];
-$selected_os_name	         = $_POST['os_name'];
-$selected_price_range        = $_POST['price_range'];
-$selected_ram_range          = $_POST['ram_range'];
-$term_filter_input_array           = array();
-$term_filter_input_array [BRAND]  = $selected_brand_name;
-$term_filter_input_array [OS]     = $selected_os_name;
+// not need to include the file "constants.php" because it already included in "searchelastic.php"
+include ("searchelastic.php");
+$page_no                            = (empty($_POST['page'])) ? 0 : $_POST['page'];
+$iquery      	                    = $_POST['initial_query'];
+$user_query_string	                = $_POST['search'];// user query
+$selected_brand_name                = $_POST['brand_name'];
+$selected_os_name	                = $_POST['os_name'];
+$selected_price_range               = $_POST['price_range'];
+$selected_ram_range                 = $_POST['ram_range'];
+$term_filter_input_array            = array();
+$term_filter_input_array [BRAND]    = $selected_brand_name;
+$term_filter_input_array [OS]       = $selected_os_name;
 $range_filter_input_array           = array();
-$range_filter_input_array [PRICE] = $selected_price_range;
-$range_filter_input_array [RAM]   = $selected_ram_range;
-$es_client 		             = new SearchElastic();
-$ret_array 		             = $es_client->perform_es($user_query_string, $term_filter_input_array, $range_filter_input_array, $iquery, $page_no);
-if(!$ret_array[0][0]){ header("Location: http://localhost/flipkart/html/error_page.html");exit();} // if no result is found then redirect to this page
+$range_filter_input_array [PRICE]   = $selected_price_range;
+$range_filter_input_array [RAM]     = $selected_ram_range;
+$es_client 		                    = new SearchElastic();
+$ret_array 		                    = $es_client->perform_es($user_query_string, $term_filter_input_array, $range_filter_input_array, $iquery, $page_no);
+if(!$ret_array[0][0]){ header(ERROR_PAGE_LOCATION);exit();} // if no result is found then redirect to this page
 ?>
 
 <!DOCTYPE html>
