@@ -94,10 +94,6 @@ class MysqlResult extends CommonUtil  // this class will used some of the functi
         {
             die('Could not connect: ' . mysql_error());
         }
-
-        echo nl2br("\n");
-        echo nl2br("\n");
-        echo "get result from mysql";
         mysql_select_db($db);
         $make_query   = "SELECT * FROM $db_table where index_id = '$product_id'";
         $fetch_details =  mysql_query($make_query);
@@ -107,7 +103,7 @@ class MysqlResult extends CommonUtil  // this class will used some of the functi
             $key_value = $row[KEY_VALUE_COLUMN];
             $product_details[$key_name]=$key_value;
         }
-        return $this->get_details_of_product($product_details); // this function is defined in RedisResult parant class
+        return $this->get_details_of_product($product_details); // this function is defined in RedisResult parent class
     }
 //  ####################################################################################################################
 }

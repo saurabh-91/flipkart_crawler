@@ -150,7 +150,8 @@ class SearchElastic
         $searchParams             = $this->get_es_index_params(INDEX, TYPE, SIZE);
         if($user_query_string) // check condition for null search query
         {
-        	$searchParams['body']['query']['match']['title'] = $user_query_string; // perform search on title field
+        	$searchParams['body']['query']['match'][NAME]['query'] = $user_query_string; // perform search on name field
+            $searchParams['body']['query']['match'][NAME]['fuzziness']=5;
         }
         else
         {
@@ -168,7 +169,8 @@ class SearchElastic
     	$initial_string           = array();
     	if($iquery) // check condition for null search query
         {
-        	$initial_string['match']['title'] = $iquery;
+        	$initial_string['match'][NAME]['query'] = $iquery;
+            $initial_string['match'][NAME]['fuzziness'] = 5;
         }
         else
         {
@@ -184,13 +186,17 @@ class SearchElastic
     	$aggregation_query                       = array();
     	$aggregation_query[GLOBAL_AGG]['global'] = new StdClass();
         if($iquery)
-    	$aggregation_query[GLOBAL_AGG]['aggs'][FILTER_AGG]['filter']['query']['match']['title'] = $iquery;
+        {
+            $aggregation_query[GLOBAL_AGG]['aggs'][FILTER_AGG]['filter']['query']['match'][NAME]['query'] = $iquery;
+            $aggregation_query[GLOBAL_AGG]['aggs'][FILTER_AGG]['filter']['query']['match'][NAME]['fuzziness'] =5;
+
+        }
         else 
         $aggregation_query[GLOBAL_AGG]['aggs'][FILTER_AGG]['filter']['query']['match_all']      = new StdClass();
     	//----------------------------------- brand aggregation ------------------------------------------------------------------
         $aggregation_query[GLOBAL_AGG]['aggs'][FILTER_AGG]['aggs'][BRAND_BUCKET]['terms']['field']         = BRAND;
     	$aggregation_query[GLOBAL_AGG]['aggs'][FILTER_AGG]['aggs'][BRAND_BUCKET]['terms']['size']          = 0;
-        $aggregation_query[GLOBAL_AGG]['aggs'][FILTER_AGG]['aggs'][BRAND_BUCKET]['terms']['min_doc_count'] =1;
+        $aggregation_query[GLOBAL_AGG]['aggs'][FILTER_AGG]['aggs'][BRAND_BUCKET]['terms']['min_doc_count'] = 1;
         //------------------------------------------------------------------------------------------------------------------------
         //----------------------------------- os aggregation ---------------------------------------------------------------------
         $aggregation_query[GLOBAL_AGG]['aggs'][FILTER_AGG]['aggs'][OS_BUCKET]['terms']['field']         = OS;

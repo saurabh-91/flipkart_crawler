@@ -216,7 +216,7 @@ mapping
 
 
 
-curl -XPUT 'localhost:9200/flipkart_test' -d'
+curl -XPUT 'localhost:9200/flipkart_final_data' -d'
  {"mappings": {
      "mobile" : {
        "properties" : {
